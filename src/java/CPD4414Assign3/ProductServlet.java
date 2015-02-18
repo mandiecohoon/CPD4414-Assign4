@@ -53,18 +53,18 @@ public class ProductServlet extends HttpServlet {
             Connection conn = getConnection();
             if (keySet.contains("productID") && keySet.contains("name") && keySet.contains("description") && keySet.contains("quantity")) {
                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO `product`(`productID`, `name`, `description`, `quantity`) "
-                        + "VALUES ('"
-                        +request.getParameter("productID")+"', '"
+                        + "VALUES ("
+                        +request.getParameter("productID")+", '"
                         +request.getParameter("name")+"', '"
-                        +request.getParameter("quantity")+"', '"
-                        +request.getParameter("description")
-                        +"');"
+                        +request.getParameter("description")+"', "
+                        +request.getParameter("quantity")
+                        +");"
                 );
                 try {
                     pstmt.executeUpdate();
                 } catch (SQLException ex) {
                     Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
-                    out.println("Error with inserting values. May be duplicate values.");
+                    out.println("Error with inserting values.");
                 }
             } else {
                 out.println("Error: Not enough data to input");
@@ -75,18 +75,20 @@ public class ProductServlet extends HttpServlet {
     }
     
     protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        Set<String> keySet = request.getParameterMap().keySet();
         try (PrintWriter out = response.getWriter()) {
             Connection conn = getConnection();
-            PreparedStatement pstmt = conn.prepareStatement("UPDATE product SET "
-                    + "name=?, "
-                    + "description=?, "
-                    + "quantity=?"
-                    + "WHERE productID = ?");
-            pstmt.setString(1, request.getParameter("name"));
-            pstmt.setString(2, request.getParameter("description"));
-            pstmt.setString(3, request.getParameter("quantity"));
-            pstmt.setString(4, request.getParameter("productID"));
-            out.printf("row updated", pstmt.executeQuery());
+            if (keySet.contains("productID") && keySet.contains("name") && keySet.contains("description") && keySet.contains("quantity")) {
+                PreparedStatement pstmt = conn.prepareStatement("UPDATE `product` SET `name`='"+request.getParameter("name")+"',`description`='"+request.getParameter("description")+"',`quantity`="+request.getParameter("quantity")+" WHERE `productID`="+request.getParameter("productID"));
+                try {
+                    pstmt.executeUpdate();
+                } catch (SQLException ex) {
+                    Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
+                    out.println("Error updating values.");
+                }
+            } else {
+                out.println("Error: Not enough data to update");
+            }
         } catch (SQLException ex) {
             Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
