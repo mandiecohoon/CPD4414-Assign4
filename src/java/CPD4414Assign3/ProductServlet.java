@@ -14,13 +14,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -62,19 +68,22 @@ public class ProductServlet extends HttpServlet {
                 );
                 try {
                     pstmt.executeUpdate();
+                    doGet(request, response); //shows updated row
                 } catch (SQLException ex) {
                     Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
                     out.println("Error with inserting values.");
+                    response.setStatus(500);
                 }
             } else {
                 out.println("Error: Not enough data to input");
+                response.setStatus(500);
             }
         } catch (SQLException ex) {
             Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         Set<String> keySet = request.getParameterMap().keySet();
         try (PrintWriter out = response.getWriter()) {
             Connection conn = getConnection();
@@ -82,12 +91,37 @@ public class ProductServlet extends HttpServlet {
                 PreparedStatement pstmt = conn.prepareStatement("UPDATE `product` SET `name`='"+request.getParameter("name")+"',`description`='"+request.getParameter("description")+"',`quantity`="+request.getParameter("quantity")+" WHERE `productID`="+request.getParameter("productID"));
                 try {
                     pstmt.executeUpdate();
+                    doGet(request, response); //shows updated row
                 } catch (SQLException ex) {
                     Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
                     out.println("Error updating values.");
+                    response.setStatus(500);
                 }
             } else {
                 out.println("Error: Not enough data to update");
+                response.setStatus(500);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        Set<String> keySet = request.getParameterMap().keySet();
+        try (PrintWriter out = response.getWriter()) {
+            Connection conn = getConnection();
+            if (keySet.contains("productID")) {
+                PreparedStatement pstmt = conn.prepareStatement("DELETE FROM `product` WHERE `productID`=" + request.getParameter("productID"));
+                try {
+                    pstmt.executeUpdate();
+                } catch (SQLException ex) {
+                    Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
+                    out.println("Error deleting entry.");
+                    response.setStatus(500);
+                }
+            } else {
+                out.println("Error: Not enough data to delete");
+                response.setStatus(500);
             }
         } catch (SQLException ex) {
             Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
@@ -96,6 +130,7 @@ public class ProductServlet extends HttpServlet {
     
     private String getResults(String query, String... params) {
         StringBuilder results = new StringBuilder();
+        String result = "a";
         
         try (Connection conn = getConnection()) {
             PreparedStatement pstmt = conn.prepareStatement(query);
@@ -105,14 +140,24 @@ public class ProductServlet extends HttpServlet {
             }
             
             ResultSet rs = pstmt.executeQuery();
+            JSONObject resultObj = new JSONObject();
+            JSONArray productArr = new JSONArray();
             
             while (rs.next()) {
-                results.append(String.format("%s, %s, %s, %s\n", rs.getInt("productID"), rs.getString("name"), rs.getString("description"), rs.getInt("quantity")));
+                Map productMap = new LinkedHashMap();
+                productMap.put("productID", rs.getInt("productID"));
+                productMap.put("name", rs.getString("name"));
+                productMap.put("description", rs.getString("description"));
+                productMap.put("quantity", rs.getInt("quantity"));
+                productArr.add(productMap);
             }
+            resultObj.put("product", productArr);
+            result = resultObj.toString();
+            
         } catch (SQLException ex) {
             Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return results.toString();
+        return result;
     }
     
     private Connection getConnection() throws SQLException {
