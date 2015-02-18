@@ -45,22 +45,26 @@ public class ProductServlet extends HttpServlet {
             if (!request.getParameterNames().hasMoreElements()) {
                 out.println(getResults("SELECT * FROM product"));
             } else {
-                int id = Integer.parseInt(request.getParameter("productID"));
-                out.println(getResults("SELECT * FROM product WHERE productID = ?", String.valueOf(id)));
+                if (request.getParameter("productID") == null) {
+                    out.println(getResults("SELECT * FROM product ORDER BY productID DESC LIMIT 1"));
+                } else {
+                    int id = Integer.parseInt(request.getParameter("productID"));
+                    out.println(getResults("SELECT * FROM product WHERE productID = ?", String.valueOf(id)));  
+                }
             }
         } catch (SQLException ex) {
             Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         Set<String> keySet = request.getParameterMap().keySet();
         try (PrintWriter out = response.getWriter()) {
             Connection conn = getConnection();
-            if (keySet.contains("productID") && keySet.contains("name") && keySet.contains("description") && keySet.contains("quantity")) {
+            if (keySet.contains("name") && keySet.contains("description") && keySet.contains("quantity")) {
                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO `product`(`productID`, `name`, `description`, `quantity`) "
                         + "VALUES ("
-                        +request.getParameter("productID")+", '"
+                        +"null, '"
                         +request.getParameter("name")+"', '"
                         +request.getParameter("description")+"', "
                         +request.getParameter("quantity")
@@ -68,6 +72,8 @@ public class ProductServlet extends HttpServlet {
                 );
                 try {
                     pstmt.executeUpdate();
+                    request.setAttribute("productID", 2);
+                    request.getParameter("productID");
                     doGet(request, response); //shows updated row
                 } catch (SQLException ex) {
                     Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
