@@ -134,27 +134,26 @@ public class ProductServlet {
         }
     }
     
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        Set<String> keySet = request.getParameterMap().keySet();
-        try (PrintWriter out = response.getWriter()) {
-            Connection conn = getConnection();
-            if (keySet.contains("productID") && keySet.contains("name") && keySet.contains("description") && keySet.contains("quantity")) {
-                PreparedStatement pstmt = conn.prepareStatement("UPDATE `product` SET `name`='"+request.getParameter("name")+"',`description`='"+request.getParameter("description")+"',`quantity`="+request.getParameter("quantity")+" WHERE `productID`="+request.getParameter("productID"));
-                try {
-                    pstmt.executeUpdate();
-                    doGet(request, response); //shows updated row
-                } catch (SQLException ex) {
-                    Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
-                    out.println("Error updating values.");
-                    response.setStatus(500);
-                }
-            } else {
-                out.println("Error: Not enough data to update");
-                response.setStatus(500);
-            }
+    @PUT
+    @Path("{id}")
+    @Consumes("application/json")
+    public Response doPut(@PathParam("id") int id, String data) throws SQLException {
+        JsonReader reader = Json.createReader(new StringReader(data));
+        JsonObject json = reader.readObject();
+        Connection conn = getConnection();
+        
+        PreparedStatement pstmt = conn.prepareStatement("UPDATE `product` SET `name`='"
+                +json.getString("name")+"',`description`='"
+                +json.getString("description")+"',`quantity`="
+                +json.getInt("quantity")+" WHERE `productID`="
+                +id
+        );
+        try {
+            pstmt.executeUpdate();
         } catch (SQLException ex) {
-            Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Update error").build();
         }
+        return Response.ok(getResults("SELECT * FROM product WHERE productID = " + id), MediaType.APPLICATION_JSON).build();
     }
     
     protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
