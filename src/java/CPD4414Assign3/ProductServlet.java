@@ -156,26 +156,18 @@ public class ProductServlet {
         return Response.ok(getResults("SELECT * FROM product WHERE productID = " + id), MediaType.APPLICATION_JSON).build();
     }
     
-    protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        Set<String> keySet = request.getParameterMap().keySet();
-        try (PrintWriter out = response.getWriter()) {
-            Connection conn = getConnection();
-            if (keySet.contains("productID")) {
-                PreparedStatement pstmt = conn.prepareStatement("DELETE FROM `product` WHERE `productID`=" + request.getParameter("productID"));
-                try {
-                    pstmt.executeUpdate();
-                } catch (SQLException ex) {
-                    Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
-                    out.println("Error deleting entry.");
-                    response.setStatus(500);
-                }
-            } else {
-                out.println("Error: Not enough data to delete");
-                response.setStatus(500);
-            }
+    @DELETE
+    @Path("{id}")
+    public Response doDelete(@PathParam("id") int id) throws SQLException {
+        Connection conn = getConnection();
+        
+        PreparedStatement pstmt = conn.prepareStatement("DELETE FROM `product` WHERE `productID`=" + String.valueOf(id));
+        try {
+            pstmt.executeUpdate();
         } catch (SQLException ex) {
-            Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Delete error").build();
         }
+        return Response.ok("", MediaType.APPLICATION_JSON).build();
     }
     
     private String getResults(String query, String... params) {
