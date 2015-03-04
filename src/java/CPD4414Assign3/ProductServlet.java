@@ -6,8 +6,6 @@
 
 package CPD4414Assign3;
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.sql.Connection;
@@ -15,10 +13,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.json.Json;
@@ -26,17 +20,9 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 /**
  *
@@ -82,58 +68,6 @@ public class ProductServlet {
         return Response.ok(getResults("SELECT * FROM product ORDER BY productID DESC LIMIT 1"), MediaType.APPLICATION_JSON).build();
     }
    
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        try (PrintWriter out = response.getWriter()) {
-            Connection conn = getConnection();
-            Statement stmt = conn.createStatement();
-            
-            if (!request.getParameterNames().hasMoreElements()) {
-                out.println(getResults("SELECT * FROM product"));
-            } else {
-                if (request.getParameter("productID") == null) {
-                    out.println(getResults("SELECT * FROM product ORDER BY productID DESC LIMIT 1"));
-                } else {
-                    int id = Integer.parseInt(request.getParameter("productID"));
-                    out.println(getResults("SELECT * FROM product WHERE productID = ?", String.valueOf(id)));  
-                }
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-    
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        Set<String> keySet = request.getParameterMap().keySet();
-        try (PrintWriter out = response.getWriter()) {
-            Connection conn = getConnection();
-            if (keySet.contains("name") && keySet.contains("description") && keySet.contains("quantity")) {
-                PreparedStatement pstmt = conn.prepareStatement("INSERT INTO `product`(`productID`, `name`, `description`, `quantity`) "
-                        + "VALUES ("
-                        +"null, '"
-                        +request.getParameter("name")+"', '"
-                        +request.getParameter("description")+"', "
-                        +request.getParameter("quantity")
-                        +");"
-                );
-                try {
-                    pstmt.executeUpdate();
-                    request.setAttribute("productID", 2);
-                    request.getParameter("productID");
-                    doGet(request, response); //shows updated row
-                } catch (SQLException ex) {
-                    Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
-                    out.println("Error with inserting values.");
-                    response.setStatus(500);
-                }
-            } else {
-                out.println("Error: Not enough data to input");
-                response.setStatus(500);
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-    
     @PUT
     @Path("{id}")
     @Consumes("application/json")
