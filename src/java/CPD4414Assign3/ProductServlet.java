@@ -45,7 +45,13 @@ public class ProductServlet {
         return Response.ok(getResults("SELECT * FROM product"), MediaType.APPLICATION_JSON).build();
     }
     
-    @Override
+    @GET
+    @Path("{productId}")
+    @Produces("application/json")
+    public Response doGet(@PathParam("productId") int id) {
+        return Response.ok(getResults("SELECT * FROM product WHERE productID = ?", String.valueOf(id)), MediaType.APPLICATION_JSON).build();
+    }
+   
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try (PrintWriter out = response.getWriter()) {
             Connection conn = getConnection();
