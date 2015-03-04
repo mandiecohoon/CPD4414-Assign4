@@ -9,6 +9,7 @@ package CPD4414Assign3;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -23,6 +24,8 @@ import java.util.logging.Logger;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -177,8 +180,7 @@ public class ProductServlet {
     }
     
     private String getResults(String query, String... params) {
-        StringBuilder results = new StringBuilder();
-        String result = "a";
+        String result = "";
         
         try (Connection conn = getConnection()) {
             PreparedStatement pstmt = conn.prepareStatement(query);
@@ -188,19 +190,22 @@ public class ProductServlet {
             }
             
             ResultSet rs = pstmt.executeQuery();
-            JSONObject resultObj = new JSONObject();
-            JSONArray productArr = new JSONArray();
+            StringWriter out = new StringWriter();
+            JsonGeneratorFactory factory = Json.createGeneratorFactory(null);
+            JsonGenerator gen = factory.createGenerator(out);
             
+            gen.writeStartArray();
             while (rs.next()) {
-                Map productMap = new LinkedHashMap();
-                productMap.put("productID", rs.getInt("productID"));
-                productMap.put("name", rs.getString("name"));
-                productMap.put("description", rs.getString("description"));
-                productMap.put("quantity", rs.getInt("quantity"));
-                productArr.add(productMap);
+                gen.writeStartObject()
+                    .write("productId", rs.getInt("productID"))
+                    .write("name", rs.getString("name"))
+                    .write("description", rs.getString("description"))
+                    .write("quantity", rs.getInt("quantity"))
+                    .writeEnd();
             }
-            resultObj.put("product", productArr);
-            result = resultObj.toString();
+            gen.writeEnd();
+            gen.close();
+            result = out.toString();
             
         } catch (SQLException ex) {
             Logger.getLogger(ProductServlet.class.getName()).log(Level.SEVERE, null, ex);
