@@ -25,6 +25,9 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -33,8 +36,14 @@ import org.json.simple.JSONObject;
  * @author Amanda Cohoon - c0628569
  */
 
-@WebServlet("/products")
-public class ProductServlet extends HttpServlet {
+@Path("/products")
+public class ProductServlet {
+    
+    @GET
+    @Produces("application/json")
+    public Response doGet() {
+        return Response.ok(getResults("SELECT * FROM product"), MediaType.APPLICATION_JSON).build();
+    }
     
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
