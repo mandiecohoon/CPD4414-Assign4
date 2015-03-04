@@ -8,6 +8,7 @@ package CPD4414Assign3;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -19,6 +20,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -50,6 +54,29 @@ public class ProductServlet {
     @Produces("application/json")
     public Response doGet(@PathParam("productId") int id) {
         return Response.ok(getResults("SELECT * FROM product WHERE productID = ?", String.valueOf(id)), MediaType.APPLICATION_JSON).build();
+    }
+    
+    @POST
+    @Consumes("application/json")
+    public Response doPost(String data) throws SQLException {
+        JsonReader reader = Json.createReader(new StringReader(data));
+        JsonObject json = reader.readObject();
+        Connection conn = getConnection();
+        
+        PreparedStatement pstmt = conn.prepareStatement("INSERT INTO `product`(`productID`, `name`, `description`, `quantity`) "
+               + "VALUES ("
+               +"null, '"
+               + json.getString("name") + "', '"
+               + json.getString("description") +"', "
+               + json.getInt("quantity")
+               +");"
+        );
+        try {
+            pstmt.executeUpdate();
+        } catch (SQLException ex) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Post error").build();
+        }
+        return Response.ok(getResults("SELECT * FROM product ORDER BY productID DESC LIMIT 1"), MediaType.APPLICATION_JSON).build();
     }
    
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
