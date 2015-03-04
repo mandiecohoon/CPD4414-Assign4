@@ -63,7 +63,7 @@ public class ProductServlet {
         try {
             pstmt.executeUpdate();
         } catch (SQLException ex) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Post error").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("505: Post error").build();
         }
         return Response.ok(getResults("SELECT * FROM product ORDER BY productID DESC LIMIT 1"), MediaType.APPLICATION_JSON).build();
     }
@@ -85,7 +85,7 @@ public class ProductServlet {
         try {
             pstmt.executeUpdate();
         } catch (SQLException ex) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Update error").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("505: Update error").build();
         }
         return Response.ok(getResults("SELECT * FROM product WHERE productID = " + id), MediaType.APPLICATION_JSON).build();
     }
@@ -94,14 +94,23 @@ public class ProductServlet {
     @Path("{id}")
     public Response doDelete(@PathParam("id") int id) throws SQLException {
         Connection conn = getConnection();
-        
+        if ("[]".equals(getResults("SELECT * FROM product WHERE productID = ?", String.valueOf(id)))) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("505: Product " + id + " does not exist.").build();
+        }
         PreparedStatement pstmt = conn.prepareStatement("DELETE FROM `product` WHERE `productID`=" + String.valueOf(id));
+        
         try {
             pstmt.executeUpdate();
         } catch (SQLException ex) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Delete error").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("505: Delete error").build();
+            
         }
         return Response.ok("", MediaType.APPLICATION_JSON).build();
+    }
+    
+    @DELETE
+    public Response doDelete() throws SQLException {
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("505: Delete error. You did not enter the product id").build();
     }
     
     private String getResults(String query, String... params) {
