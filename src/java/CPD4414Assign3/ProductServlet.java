@@ -71,7 +71,6 @@ public class ProductServlet {
         rs.next();
         String id = String.valueOf(rs.getInt("productID"));
         
-        //return Response.ok(getResults("SELECT * FROM product ORDER BY productID DESC LIMIT 1"), MediaType.APPLICATION_JSON).build();
         return Response.ok("http://localhost:8080/CPD4414-Assign4/products/" + id + " \n" + getResults("SELECT * FROM product WHERE productID = ?", id)).build();
     }
    
@@ -95,8 +94,7 @@ public class ProductServlet {
             return Response.status(500).entity("500: Update error").build();
         }
         
-        return Response.ok(getResults("SELECT * FROM product WHERE productID = " + id), MediaType.APPLICATION_JSON).build();
-        //return Response.ok("http://localhost:8080/CPD4414-Assign4/products/" + id + " \n" + getResults("SELECT * FROM product WHERE productID = " + id)).build();
+        return Response.ok("http://localhost:8080/CPD4414-Assign4/products/" + id + " \n" + getResults("SELECT * FROM product WHERE productID = " + id)).build();
     }
     
     @DELETE
